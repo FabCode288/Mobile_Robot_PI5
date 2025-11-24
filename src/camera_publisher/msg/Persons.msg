@@ -1,1 +1,0 @@
-PersonMarker[] people
