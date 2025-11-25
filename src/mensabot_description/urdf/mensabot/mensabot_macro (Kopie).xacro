@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mensabot">
+
+  <!-- ===================== MATERIALIEN ===================== -->
+  <material name="grey"><color rgba="0.5 0.5 0.5 1"/></material>
+  <material name="black"><color rgba="0 0 0 1"/></material>
+  <material name="blue"><color rgba="0 0 1 1"/></material>
+  <material name="green"><color rgba="0 1 0 1"/></material>
+  <material name="red"><color rgba="1 0 0 1"/></material>
+  <material name="white"><color rgba="1 1 1 1"/></material>
+
+  <!-- ===================== GLOBALE PARAMETER ===================== -->
+  <xacro:property name="rod_weight_per_meter" value="1.549"/>
+
+  <!-- ===================== ROBOT-MAKRO ===================== -->
+  <xacro:macro name="mensabot_frame">
+
+    <!-- Basis -->
+    <link name="base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><sphere radius="0.003"/></geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+
+    <!-- Grundstruktur -->
+    <xacro:mensabot_rod prefix="mid_front" parent="base_link" position="0.295 0 0" rotation="0 0 ${pi/2}" length="0.490" color="grey"/>
+    <xacro:mensabot_rod prefix="mid_second" parent="base_link" position="0.070 0 0" rotation="0 0 ${pi/2}" length="0.490" color="grey"/>
+    <xacro:mensabot_rod prefix="mid_third" parent="base_link" position="-0.180 0 0" rotation="0 0 ${pi/2}" length="0.490" color="grey"/>
+    <xacro:mensabot_rod prefix="mid_back" parent="base_link" position="-0.295 0 0" rotation="0 0 ${pi/2}" length="0.490" color="grey"/>
+    <xacro:mensabot_rod prefix="side_left" parent="base_link" position="0 0.265 0" rotation="0 0 0" length="0.630" color="grey"/>
+    <xacro:mensabot_rod prefix="side_right" parent="base_link" position="0 -0.265 0" rotation="0 0 0" length="0.630" color="grey"/>
+
+    <!-- Box-Komponenten -->
+    <xacro:mensabot_box postfix="battery_board" parent="base_link" position="-0.115 0 -0.031" rotation="0 0 0" length="0.400" width="0.443" height="0.022" weight="2.219" color="grey"/>
+    <xacro:mensabot_box postfix="battery" parent="base_link" position="-0.060 0 0.0625" rotation="0 ${pi/2} 0" length="0.165" width="0.450" height="0.190" weight="17.5" color="grey"/>
+    <xacro:mensabot_box postfix="computer" parent="base_link" position="0.180 0 0.064" rotation="0 0 0" length="0.200" width="0.240" height="0.088" weight="3.8" color="grey"/>
+
+    <!-- Räder -->
+    <xacro:mensabot_wheel prefix="left" parent="base_link" position="0.180 0.260 -0.120" rotation="${pi} 0 0" radius="0.085" width="0.050" weight="2" color="white"/>
+    <xacro:mensabot_wheel prefix="right" parent="base_link" position="0.180 -0.260 -0.120" rotation="0 0 0" radius="0.085" width="0.050" weight="2" color="white"/>
+    
+    <!-- Motoren -->
+    <xacro:mensabot_motor prefix="left" parent="base_link" position="0.180 0.1625 -0.120" rotation="0 0 0" radius="0.055" width="0.143" weight="5" color="red"/>
+    <xacro:mensabot_motor prefix="right" parent="base_link" position="0.180 -0.1625 -0.120" rotation="0 0 0" radius="0.055" width="0.143" weight="5" color="red"/>
+
+    <!-- Castor-Wheels -->
+    <xacro:mensabot_castor_wheel prefix="castor_left" parent="base_link" position="-0.200 0.12 -0.1235" radius="0.0815" color="black"/>
+    <xacro:mensabot_castor_wheel prefix="castor_right" parent="base_link" position="-0.200 -0.12 -0.1235" radius="0.0815" color="black"/>
+
+    <!-- Sensoren -->
+    <xacro:mensabot_camera prefix="front_camera" parent="base_link" position="0.10 0.00 0.25" rotation="-1.5708 0 -1.5708" color="blue"/>
+    <xacro:mensabot_lidar prefix="lidar_front" parent="base_link" position="0.25 0.15 0.05" rotation="0 0 0" color="green"/>
+    <xacro:mensabot_lidar prefix="lidar_back" parent="base_link" position="-0.25 -0.15 0.05" rotation="0 0 0" color="green"/>
+
+  </xacro:macro>
+
+  <!-- ===================== MAKROS ===================== -->
+
+  <!-- Kamera -->
+  <xacro:macro name="mensabot_camera" params="prefix parent position rotation color=blue">
+    <link name="${prefix}_link">
+      <visual>
+        <geometry><box size="0.10 0.03 0.02"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry><box size="0.10 0.03 0.02"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}_link"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Lidar -->
+  <xacro:macro name="mensabot_lidar" params="prefix parent position rotation color=green">
+    <link name="${prefix}_link">
+      <visual>
+        <geometry><cylinder length="0.03" radius="0.03"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry><cylinder length="0.03" radius="0.03"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.05"/>
+        <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}_link"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Wheel -->
+  <xacro:macro name="mensabot_wheel" params="prefix parent position rotation radius width weight color=black">
+    <link name="${prefix}_wheel">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${width}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${width}"/></geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0"/>
+        <mass value="${weight}"/>
+        <inertia ixx="${weight * radius * radius / 2}" iyy="${weight * (3*radius*radius + width*width)/12}" izz="${weight * (3*radius*radius + width*width)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <axis xyz="0 1 0"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Rod -->
+  <xacro:macro name="mensabot_rod" params="prefix parent position rotation length color=grey">
+    <link name="${prefix}_mensabot_rod">
+      <visual>
+        <geometry><box size="${length} 0.040 0.040"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry><box size="${length} 0.040 0.040"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="${rod_weight_per_meter * length}"/>
+        <inertia ixx="${rod_weight_per_meter * length * (0.04*0.04 + 0.04*0.04)/12}" 
+                 iyy="${rod_weight_per_meter * length * (0.04*0.04 + length*length)/12}" 
+                 izz="${rod_weight_per_meter * length * (0.04*0.04 + length*length)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_mensabot_rod_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}_mensabot_rod"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Box -->
+  <xacro:macro name="mensabot_box" params="postfix parent position rotation length width height weight color=grey">
+    <link name="mensabot_${postfix}">
+      <visual>
+        <geometry><box size="${length} ${width} ${height}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry><box size="${length} ${width} ${height}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="${weight}"/>
+        <inertia ixx="${weight * (height*height + width*width)/12}" 
+                 iyy="${weight * (height*height + length*length)/12}" 
+                 izz="${weight * (width*width + length*length)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="mensabot_${postfix}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="mensabot_${postfix}"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Motor -->
+  <xacro:macro name="mensabot_motor" params="prefix parent position rotation radius width weight color=black">
+    <link name="${prefix}_motor">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${width}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${width}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="${weight}"/>
+        <inertia ixx="${weight * radius * radius / 2}" iyy="${weight * (3*radius*radius + width*width)/12}" izz="${weight * (3*radius*radius + width*width)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_motor_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}_motor"/>
+      <origin xyz="${position}" rpy="${rotation}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Castor wheel -->
+  <xacro:macro name="mensabot_castor_wheel" params="prefix parent position radius color=black">
+    <link name="${prefix}_castor_wheel">
+      <visual>
+        <geometry><sphere radius="${radius}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry><sphere radius="${radius}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_castor_wheel_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}_castor_wheel"/>
+      <origin xyz="${position}"/>
+    </joint>
+  </xacro:macro>
+
+</robot>
+

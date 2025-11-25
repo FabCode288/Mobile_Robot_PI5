@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================================ -->
+  <!-- Macro für ein Radgelenk -->
+  <!-- ================================ -->
+  <xacro:macro name="mensabot_base_wheel_joint" params="prefix">
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <command_interface name="velocity"/>   <!-- für diff_drive_controller -->
+      <state_interface name="position"/>    <!-- für joint_state_broadcaster -->
+      <state_interface name="velocity"/>    <!-- für joint_state_broadcaster -->
+      <state_interface name="torque"/>      <!-- optional -->
+      <state_interface name="controller_mode"/> <!-- optional -->
+    </joint>
+  </xacro:macro>
+
+  <!-- ================================ -->
+  <!-- ROS 2 Control Setup für Simulation -->
+  <!-- ================================ -->
+  <xacro:macro name="mensabot_ros2_control">
+    <ros2_control name="mensabot_control" type="system">
+
+      <hardware>
+        <plugin>mock_components/GenericSystem</plugin>
+        <param name="fake_sensor_commands">true</param>
+        <param name="calculate_dynamics">true</param>
+        <param name="state_following_offset">0.0</param>
+        <param name="position_noise">0.0</param>
+        <param name="velocity_noise">0.0</param>
+        <param name="master_id">0</param>
+        <param name="control_frequency">20</param>
+      </hardware>
+
+      <!-- Radgelenke -->
+      <xacro:mensabot_base_wheel_joint prefix="right"/>
+      <xacro:mensabot_base_wheel_joint prefix="left"/>
+
+    </ros2_control>
+  </xacro:macro>
+
+</robot>

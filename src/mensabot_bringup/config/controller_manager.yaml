@@ -1,0 +1,26 @@
+controller_manager:
+  ros__parameters:
+
+    update_rate: 20                                                       # Frequency (Hz) of the controller manager update loop.
+                                                                          # Also change:
+                                                                          #   - interpolation time in motor_slave_config.yaml
+                                                                          #   - control_frequency in ../../mensabot_description/urdf/mensabot/mensabot_macro.ros2_control.xacro
+
+    joint_state_broadcaster:                                              # Publishes states of "dynamic" (continuous, revolute, prismatic) joints.
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    mensabot_base_controller:                                             # Converts robot velocity and rotation commands to wheel velocity commands.
+      type: diff_drive_controller/DiffDriveController
+      
+generic_system:
+  ros__parameters:
+    joints:
+      - left_wheel_joint
+      - right_wheel_joint
+    state_interfaces: ["position", "velocity"]
+    command_interfaces: ["velocity"]
+  # --- Fake hardware simulation ---
+    fake_sensor_commands: true        # folgt den Velocity-Befehlen realistisch
+    state_following_offset: 0.0       # kein zufälliger Drift
+    position_noise: 0.0               # keine künstlichen Schwankungen
+    velocity_noise: 0.0
