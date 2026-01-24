@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Nodes &mdash; Mensabot 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Launch Files" href="launch_files.html" />
+    <link rel="prev" title="Project Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Mensabot
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Project Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python Nodes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-marker_visualization.marker_visualization">Camera Point Handler</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#marker_visualization.marker_visualization.CameraPointHandler"><code class="docutils literal notranslate"><span class="pre">CameraPointHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#marker_visualization.marker_visualization.CameraPointHandler.get_color_for_person"><code class="docutils literal notranslate"><span class="pre">CameraPointHandler.get_color_for_person()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#marker_visualization.marker_visualization.CameraPointHandler.persons_callback"><code class="docutils literal notranslate"><span class="pre">CameraPointHandler.persons_callback()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#marker_visualization.marker_visualization.CameraPointHandler.publish_arrow"><code class="docutils literal notranslate"><span class="pre">CameraPointHandler.publish_arrow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#marker_visualization.marker_visualization.CameraPointHandler.publish_person_point"><code class="docutils literal notranslate"><span class="pre">CameraPointHandler.publish_person_point()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#marker_visualization.marker_visualization.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-odom_logger.odom_logger">Odometry Logger</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#odom_logger.odom_logger.OdomLogger"><code class="docutils literal notranslate"><span class="pre">OdomLogger</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#odom_logger.odom_logger.OdomLogger.odom_callback"><code class="docutils literal notranslate"><span class="pre">OdomLogger.odom_callback()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#odom_logger.odom_logger.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-camera_publisher.camera_pub">Camera Publisher</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher"><code class="docutils literal notranslate"><span class="pre">CameraPublisher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_image"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.connect_shm_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_persons"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.connect_shm_persons()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.publish_all"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.publish_all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.publish_image"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.publish_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.publish_persons"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.publish_persons()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera_publisher.camera_pub.CameraPublisher.read_predictions"><code class="docutils literal notranslate"><span class="pre">CameraPublisher.read_predictions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#camera_publisher.camera_pub.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="launch_files.html">Launch Files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Mensabot</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Python Nodes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/python_nodes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="python-nodes">
+<h1>Python Nodes<a class="headerlink" href="#python-nodes" title="Link to this heading"></a></h1>
+<section id="module-marker_visualization.marker_visualization">
+<span id="camera-point-handler"></span><h2>Camera Point Handler<a class="headerlink" href="#module-marker_visualization.marker_visualization" title="Link to this heading"></a></h2>
+<p>Camera Point Handler Node.</p>
+<p>This ROS2 node receives detected persons from a camera topic,
+transforms their positions into the odometry coordinate frame,
+and visualizes them as RViz markers.</p>
+<p>Features:
+- Deterministic color assignment per person ID
+- First and last trajectory points visualized as spheres
+- Movement direction visualized as an arrow</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.CameraPointHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">marker_visualization.marker_visualization.</span></span><span class="sig-name descname"><span class="pre">CameraPointHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#CameraPointHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.CameraPointHandler" title="Link to this definition"></a></dt>
+<dd><p>ROS2 node for processing and visualizing camera-based person detections.</p>
+<p>The node:
+- subscribes to a <cite>Persons</cite> topic published by a camera pipeline
+- transforms points from the camera frame to the odometry frame
+- publishes RViz markers for visualization</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.CameraPointHandler.get_color_for_person">
+<span class="sig-name descname"><span class="pre">get_color_for_person</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#CameraPointHandler.get_color_for_person"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.CameraPointHandler.get_color_for_person" title="Link to this definition"></a></dt>
+<dd><p>Generate a deterministic RGB color for a person.</p>
+<p>The color is derived from the person ID so that the same
+person is always visualized with the same color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>person_id</strong> (<em>int</em>) – Unique identifier of the person</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>RGB color values in range [0.0, 1.0]</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[float, float, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.CameraPointHandler.persons_callback">
+<span class="sig-name descname"><span class="pre">persons_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#CameraPointHandler.persons_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.CameraPointHandler.persons_callback" title="Link to this definition"></a></dt>
+<dd><p>Callback for received person detection messages.</p>
+<p>For each person:
+- the first and last trajectory points are visualized as spheres
+- an arrow marker is published to indicate movement direction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>Persons</em>) – Message containing detected persons</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.CameraPointHandler.publish_arrow">
+<span class="sig-name descname"><span class="pre">publish_arrow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#CameraPointHandler.publish_arrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.CameraPointHandler.publish_arrow" title="Link to this definition"></a></dt>
+<dd><p>Create and publish an arrow marker between two points.</p>
+<p>The arrow represents the movement direction of a person.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> (<em>Point</em>) – Start point in the camera frame</p></li>
+<li><p><strong>last</strong> (<em>Point</em>) – End point in the camera frame</p></li>
+<li><p><strong>marker_id</strong> (<em>int</em>) – Marker identifier</p></li>
+<li><p><strong>person_id</strong> (<em>int</em>) – Person ID used for color assignment</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.CameraPointHandler.publish_person_point">
+<span class="sig-name descname"><span class="pre">publish_person_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#CameraPointHandler.publish_person_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.CameraPointHandler.publish_person_point" title="Link to this definition"></a></dt>
+<dd><p>Prepare and publish a sphere marker for a person point.</p>
+<p>The point is wrapped in a <cite>PointStamped</cite>, transformed into the
+target frame, and then published as a sphere marker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>Point</em>) – Point in the camera coordinate frame</p></li>
+<li><p><strong>marker_id</strong> (<em>int</em>) – Unique marker identifier</p></li>
+<li><p><strong>person_id</strong> (<em>int</em>) – Person ID used for color assignment</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="marker_visualization.marker_visualization.main">
+<span class="sig-prename descclassname"><span class="pre">marker_visualization.marker_visualization.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/marker_visualization/marker_visualization.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#marker_visualization.marker_visualization.main" title="Link to this definition"></a></dt>
+<dd><p>Entry point for the CameraPointHandler node.</p>
+<p>Initializes rclpy, spins the node, and ensures
+a clean shutdown on exit.</p>
+</dd></dl>
+
+</section>
+<section id="module-odom_logger.odom_logger">
+<span id="odometry-logger"></span><h2>Odometry Logger<a class="headerlink" href="#module-odom_logger.odom_logger" title="Link to this heading"></a></h2>
+<p>Odometry Logger Node.</p>
+<p>This ROS2 node subscribes to odometry information and builds a continuous
+<cite>nav_msgs/Path</cite> message from the received poses.</p>
+<p>The generated path can be visualized in RViz to show the trajectory
+of the robot over time.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="odom_logger.odom_logger.OdomLogger">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">odom_logger.odom_logger.</span></span><span class="sig-name descname"><span class="pre">OdomLogger</span></span><a class="reference internal" href="_modules/odom_logger/odom_logger.html#OdomLogger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#odom_logger.odom_logger.OdomLogger" title="Link to this definition"></a></dt>
+<dd><p>ROS2 node for logging odometry data and publishing a path.</p>
+<p>The node:
+- subscribes to an odometry topic
+- extracts the robot pose from each message
+- appends the pose to a <cite>nav_msgs/Path</cite>
+- publishes the accumulated path for visualization</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="odom_logger.odom_logger.OdomLogger.odom_callback">
+<span class="sig-name descname"><span class="pre">odom_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/odom_logger/odom_logger.html#OdomLogger.odom_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#odom_logger.odom_logger.OdomLogger.odom_callback" title="Link to this definition"></a></dt>
+<dd><p>Callback for received odometry messages.</p>
+<p>Extracts the robot pose from the odometry message,
+converts it into a <cite>PoseStamped</cite>, appends it to the
+internal path, and publishes the updated path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>Odometry</em>) – Odometry message containing the robot pose</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="odom_logger.odom_logger.main">
+<span class="sig-prename descclassname"><span class="pre">odom_logger.odom_logger.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/odom_logger/odom_logger.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#odom_logger.odom_logger.main" title="Link to this definition"></a></dt>
+<dd><p>Entry point for the OdomLogger node.</p>
+<p>Initializes rclpy, spins the node, and performs
+a clean shutdown when the node stops.</p>
+</dd></dl>
+
+</section>
+<section id="module-camera_publisher.camera_pub">
+<span id="camera-publisher"></span><h2>Camera Publisher<a class="headerlink" href="#module-camera_publisher.camera_pub" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">camera_publisher.camera_pub.</span></span><span class="sig-name descname"><span class="pre">CameraPublisher</span></span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher" title="Link to this definition"></a></dt>
+<dd><p>ROS 2 node for publishing camera-based person detections from shared memory.</p>
+<p>This node reads prediction data written by an external process into shared
+memory and publishes it as ROS messages. Each detected person is represented
+by a unique ID and a sequence of 3D points.</p>
+<p>Additionally, the node can publish RGB images from shared memory as
+<cite>sensor_msgs/Image</cite> messages.</p>
+<p>Shared memory layout for person predictions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>int32  num_targets</p></li>
+<li><p>uint64 timestamp_ns</p></li>
+<li><dl class="simple">
+<dt>for each target:</dt><dd><ul>
+<li><p>int32  person_id</p></li>
+<li><p>int32  num_points</p></li>
+<li><p>float32 x, y, z (per point)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.connect_shm_image">
+<span class="sig-name descname"><span class="pre">connect_shm_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.connect_shm_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_image" title="Link to this definition"></a></dt>
+<dd><p>Connect to the shared memory segment containing the camera image.</p>
+<p>The shared memory buffer is interpreted as a NumPy array with a fixed
+shape and data type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.connect_shm_persons">
+<span class="sig-name descname"><span class="pre">connect_shm_persons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.connect_shm_persons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_persons" title="Link to this definition"></a></dt>
+<dd><p>Connect to the shared memory segment containing person predictions.</p>
+<p>If the shared memory segment is not available yet, the connection attempt
+fails silently and will be retried later.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.publish_all">
+<span class="sig-name descname"><span class="pre">publish_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.publish_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.publish_all" title="Link to this definition"></a></dt>
+<dd><p>Periodic timer callback.</p>
+<p>Publishes person detections and, optionally, the camera image.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.publish_image">
+<span class="sig-name descname"><span class="pre">publish_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.publish_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.publish_image" title="Link to this definition"></a></dt>
+<dd><p>Publish the camera image from shared memory as a ROS image message.</p>
+<p>The image is copied from shared memory, converted to a ROS-compatible
+format, and published with the current ROS time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.publish_persons">
+<span class="sig-name descname"><span class="pre">publish_persons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.publish_persons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.publish_persons" title="Link to this definition"></a></dt>
+<dd><p>Publish detected persons as a <cite>robot_msgs/Persons</cite> message.</p>
+<p>The ROS message timestamp is derived from the shared memory timestamp
+to preserve temporal consistency with the source data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.read_predictions">
+<span class="sig-name descname"><span class="pre">read_predictions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.read_predictions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.read_predictions" title="Link to this definition"></a></dt>
+<dd><p>Read person predictions from shared memory.</p>
+<p>The method parses the shared memory buffer according to the predefined
+binary layout and extracts the timestamp, person IDs, and associated
+3D points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>int | None: Timestamp in nanoseconds, or None if no data
+is available</p></li>
+<li><p>list: List of tuples (person_id, list of (x, y, z) points)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="camera_publisher.camera_pub.main">
+<span class="sig-prename descclassname"><span class="pre">camera_publisher.camera_pub.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.main" title="Link to this definition"></a></dt>
+<dd><p>Entry point for the CameraPublisher node.</p>
+<p>Initializes rclpy, spins the node, and ensures a clean shutdown.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Project Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="launch_files.html" class="btn btn-neutral float-right" title="Launch Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mensabot_Admin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

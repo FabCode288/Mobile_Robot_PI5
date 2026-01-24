@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>marker_visualization.marker_visualization &mdash; Mensabot 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Mensabot
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Project Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_nodes.html">Python Nodes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../launch_files.html">Launch Files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Mensabot</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">marker_visualization.marker_visualization</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for marker_visualization.marker_visualization</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Camera Point Handler Node.</span>
+
+<span class="sd">This ROS2 node receives detected persons from a camera topic,</span>
+<span class="sd">transforms their positions into the odometry coordinate frame,</span>
+<span class="sd">and visualizes them as RViz markers.</span>
+
+<span class="sd">Features:</span>
+<span class="sd">- Deterministic color assignment per person ID</span>
+<span class="sd">- First and last trajectory points visualized as spheres</span>
+<span class="sd">- Movement direction visualized as an arrow</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">rclpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rclpy.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">geometry_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">PointStamped</span><span class="p">,</span> <span class="n">Point</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">visualization_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Marker</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">robot_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Persons</span><span class="p">,</span> <span class="n">PersonMarker</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">tf2_ros</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tf2_geometry_msgs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">builtin_interfaces.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Duration</span>
+
+
+<div class="viewcode-block" id="CameraPointHandler">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.CameraPointHandler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CameraPointHandler</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ROS2 node for processing and visualizing camera-based person detections.</span>
+
+<span class="sd">    The node:</span>
+<span class="sd">    - subscribes to a `Persons` topic published by a camera pipeline</span>
+<span class="sd">    - transforms points from the camera frame to the odometry frame</span>
+<span class="sd">    - publishes RViz markers for visualization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the CameraPointHandler node.</span>
+
+<span class="sd">        Sets up:</span>
+<span class="sd">        - TF buffer and listener</span>
+<span class="sd">        - subscriber for detected persons</span>
+<span class="sd">        - publisher for RViz markers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;camera_point_handler&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_buffer</span> <span class="o">=</span> <span class="n">tf2_ros</span><span class="o">.</span><span class="n">Buffer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_listener</span> <span class="o">=</span> <span class="n">tf2_ros</span><span class="o">.</span><span class="n">TransformListener</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_buffer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_sub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_subscription</span><span class="p">(</span>
+            <span class="n">Persons</span><span class="p">,</span>
+            <span class="s1">&#39;/camera_persons&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">persons_callback</span><span class="p">,</span>
+            <span class="mi">10</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">marker_pub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_publisher</span><span class="p">(</span>
+            <span class="n">Marker</span><span class="p">,</span>
+            <span class="s1">&#39;/camera_point_marker&#39;</span><span class="p">,</span>
+            <span class="mi">10</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_frame</span> <span class="o">=</span> <span class="s1">&#39;front_camera_link&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_frame</span> <span class="o">=</span> <span class="s1">&#39;odom&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s1">&#39;CameraPointHandler ready (listening for camera points)&#39;</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="CameraPointHandler.get_color_for_person">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.CameraPointHandler.get_color_for_person">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_color_for_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a deterministic RGB color for a person.</span>
+
+<span class="sd">        The color is derived from the person ID so that the same</span>
+<span class="sd">        person is always visualized with the same color.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            person_id (int): Unique identifier of the person</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[float, float, float]: RGB color values in range [0.0, 1.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">((</span><span class="n">person_id</span> <span class="o">*</span> <span class="mi">97</span><span class="p">)</span> <span class="o">%</span> <span class="mi">255</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="p">((</span><span class="n">person_id</span> <span class="o">*</span> <span class="mi">53</span><span class="p">)</span> <span class="o">%</span> <span class="mi">255</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">((</span><span class="n">person_id</span> <span class="o">*</span> <span class="mi">199</span><span class="p">)</span> <span class="o">%</span> <span class="mi">255</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span></div>
+
+
+<div class="viewcode-block" id="CameraPointHandler.persons_callback">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.CameraPointHandler.persons_callback">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">persons_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Persons</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Callback for received person detection messages.</span>
+
+<span class="sd">        For each person:</span>
+<span class="sd">        - the first and last trajectory points are visualized as spheres</span>
+<span class="sd">        - an arrow marker is published to indicate movement direction</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg (Persons): Message containing detected persons</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">people</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">person_id</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">id</span>
+
+            <span class="n">first_pos</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">last_pos</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">marker_id_first</span> <span class="o">=</span> <span class="n">person_id</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">marker_id_last</span> <span class="o">=</span> <span class="n">person_id</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">marker_id_arrow</span> <span class="o">=</span> <span class="n">person_id</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">3</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_person_point</span><span class="p">(</span>
+                <span class="n">first_pos</span><span class="p">,</span> <span class="n">marker_id_first</span><span class="p">,</span> <span class="n">person_id</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_person_point</span><span class="p">(</span>
+                <span class="n">last_pos</span><span class="p">,</span> <span class="n">marker_id_last</span><span class="p">,</span> <span class="n">person_id</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_arrow</span><span class="p">(</span>
+                <span class="n">first_pos</span><span class="p">,</span> <span class="n">last_pos</span><span class="p">,</span> <span class="n">marker_id_arrow</span><span class="p">,</span> <span class="n">person_id</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CameraPointHandler.publish_person_point">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.CameraPointHandler.publish_person_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_person_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">Point</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare and publish a sphere marker for a person point.</span>
+
+<span class="sd">        The point is wrapped in a `PointStamped`, transformed into the</span>
+<span class="sd">        target frame, and then published as a sphere marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            p (Point): Point in the camera coordinate frame</span>
+<span class="sd">            marker_id (int): Unique marker identifier</span>
+<span class="sd">            person_id (int): Person ID used for color assignment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point_stamped</span> <span class="o">=</span> <span class="n">PointStamped</span><span class="p">()</span>
+        <span class="n">point_stamped</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_frame</span>
+        <span class="n">point_stamped</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_clock</span><span class="p">()</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+        <span class="n">point_stamped</span><span class="o">.</span><span class="n">point</span> <span class="o">=</span> <span class="n">p</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transform_and_publish_sphere</span><span class="p">(</span>
+            <span class="n">point_stamped</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">person_id</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_transform_and_publish_sphere</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">PointStamped</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">person_id</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Transform a point into the target frame and publish it as a sphere marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            point (PointStamped): Point in the source coordinate frame</span>
+<span class="sd">            marker_id (int): Marker identifier</span>
+<span class="sd">            person_id (int): Person ID used for color assignment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_buffer</span><span class="o">.</span><span class="n">lookup_transform</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target_frame</span><span class="p">,</span>
+                <span class="n">point</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span><span class="p">,</span>
+                <span class="n">rclpy</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">tp</span> <span class="o">=</span> <span class="n">tf2_geometry_msgs</span><span class="o">.</span><span class="n">do_transform_point</span><span class="p">(</span>
+                <span class="n">point</span><span class="p">,</span> <span class="n">transform</span>
+            <span class="p">)</span>
+
+            <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_color_for_person</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+
+            <span class="n">marker</span> <span class="o">=</span> <span class="n">Marker</span><span class="p">()</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_frame</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span>
+                <span class="n">seconds</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">ns</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;person_</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">marker_id</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">Marker</span><span class="o">.</span><span class="n">SPHERE</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">Marker</span><span class="o">.</span><span class="n">ADD</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">x</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">y</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">z</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">pose</span><span class="o">.</span><span class="n">orientation</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mf">0.24</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mf">0.24</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.24</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">r</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">g</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">Duration</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nanosec</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">marker_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Could not transform sphere point: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="CameraPointHandler.publish_arrow">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.CameraPointHandler.publish_arrow">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_arrow</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">:</span> <span class="n">Point</span><span class="p">,</span> <span class="n">last</span><span class="p">:</span> <span class="n">Point</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">person_id</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and publish an arrow marker between two points.</span>
+
+<span class="sd">        The arrow represents the movement direction of a person.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            first (Point): Start point in the camera frame</span>
+<span class="sd">            last (Point): End point in the camera frame</span>
+<span class="sd">            marker_id (int): Marker identifier</span>
+<span class="sd">            person_id (int): Person ID used for color assignment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_buffer</span><span class="o">.</span><span class="n">lookup_transform</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target_frame</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">source_frame</span><span class="p">,</span>
+                <span class="n">rclpy</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">PointStamped</span><span class="p">()</span>
+            <span class="n">p1</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_frame</span>
+            <span class="n">p1</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_clock</span><span class="p">()</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+            <span class="n">p1</span><span class="o">.</span><span class="n">point</span> <span class="o">=</span> <span class="n">first</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">tf2_geometry_msgs</span><span class="o">.</span><span class="n">do_transform_point</span><span class="p">(</span>
+                <span class="n">p1</span><span class="p">,</span> <span class="n">transform</span>
+            <span class="p">)</span>
+
+            <span class="n">p2</span> <span class="o">=</span> <span class="n">PointStamped</span><span class="p">()</span>
+            <span class="n">p2</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_frame</span>
+            <span class="n">p2</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_clock</span><span class="p">()</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+            <span class="n">p2</span><span class="o">.</span><span class="n">point</span> <span class="o">=</span> <span class="n">last</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="n">tf2_geometry_msgs</span><span class="o">.</span><span class="n">do_transform_point</span><span class="p">(</span>
+                <span class="n">p2</span><span class="p">,</span> <span class="n">transform</span>
+            <span class="p">)</span>
+
+            <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_color_for_person</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+
+            <span class="n">marker</span> <span class="o">=</span> <span class="n">Marker</span><span class="p">()</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_frame</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="n">rclpy</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Time</span><span class="p">(</span>
+                <span class="n">seconds</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">ns</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;person_arrow_</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">marker_id</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">Marker</span><span class="o">.</span><span class="n">ARROW</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">Marker</span><span class="o">.</span><span class="n">ADD</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mf">0.1</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mf">0.2</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">r</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">g</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">Duration</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nanosec</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">marker</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">Point</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">t1</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">t1</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                    <span class="n">z</span><span class="o">=</span><span class="n">t1</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">z</span>
+                <span class="p">),</span>
+                <span class="n">Point</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">t2</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">t2</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                    <span class="n">z</span><span class="o">=</span><span class="n">t2</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">z</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">marker_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Could not publish arrow: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../python_nodes.html#marker_visualization.marker_visualization.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Entry point for the CameraPointHandler node.</span>
+
+<span class="sd">    Initializes rclpy, spins the node, and ensures</span>
+<span class="sd">    a clean shutdown on exit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">CameraPointHandler</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">spin</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mensabot_Admin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

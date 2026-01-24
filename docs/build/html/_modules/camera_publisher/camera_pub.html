@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>camera_publisher.camera_pub &mdash; Mensabot 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Mensabot
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Project Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python_nodes.html">Python Nodes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../launch_files.html">Launch Files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Mensabot</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">camera_publisher.camera_pub</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for camera_publisher.camera_pub</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">rclpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rclpy.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">robot_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Persons</span><span class="p">,</span> <span class="n">PersonMarker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geometry_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Point</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sensor_msgs.msg</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cv_bridge</span><span class="w"> </span><span class="kn">import</span> <span class="n">CvBridge</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">shared_memory</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="c1"># ============================================================</span>
+<span class="c1"># Shared memory image parameters</span>
+<span class="c1"># ============================================================</span>
+
+<span class="n">WIDTH</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">=</span> <span class="mi">640</span><span class="p">,</span> <span class="mi">480</span>
+<span class="n">SHAPE</span> <span class="o">=</span> <span class="p">(</span><span class="n">HEIGHT</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">DTYPE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span>
+
+<span class="c1"># ============================================================</span>
+<span class="c1"># Shared memory person parameters (with timestamp)</span>
+<span class="c1"># ============================================================</span>
+
+<span class="n">MAX_TARGETS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">MAX_POINTS_PER_TARGET</span> <span class="o">=</span> <span class="mi">15</span>
+
+<span class="n">MAX_BYTES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="mi">4</span> <span class="o">+</span>   <span class="c1"># int32 num_targets</span>
+    <span class="mi">8</span> <span class="o">+</span>   <span class="c1"># uint64 timestamp_ns</span>
+    <span class="n">MAX_TARGETS</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">MAX_POINTS_PER_TARGET</span> <span class="o">*</span> <span class="mi">12</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># ============================================================</span>
+<span class="c1"># ROS Node</span>
+<span class="c1"># ============================================================</span>
+
+<div class="viewcode-block" id="CameraPublisher">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CameraPublisher</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ROS 2 node for publishing camera-based person detections from shared memory.</span>
+
+<span class="sd">    This node reads prediction data written by an external process into shared</span>
+<span class="sd">    memory and publishes it as ROS messages. Each detected person is represented</span>
+<span class="sd">    by a unique ID and a sequence of 3D points.</span>
+
+<span class="sd">    Additionally, the node can publish RGB images from shared memory as</span>
+<span class="sd">    `sensor_msgs/Image` messages.</span>
+
+<span class="sd">    Shared memory layout for person predictions:</span>
+
+<span class="sd">        - int32  num_targets</span>
+<span class="sd">        - uint64 timestamp_ns</span>
+<span class="sd">        - for each target:</span>
+<span class="sd">            - int32  person_id</span>
+<span class="sd">            - int32  num_points</span>
+<span class="sd">            - float32 x, y, z (per point)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the CameraPublisher node.</span>
+
+<span class="sd">        Sets up ROS publishers, shared memory handles, a CV bridge for image</span>
+<span class="sd">        conversion, and a periodic timer for publishing data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;camera_person_publisher&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">person_pub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_publisher</span><span class="p">(</span>
+            <span class="n">Persons</span><span class="p">,</span> <span class="s1">&#39;/camera_persons&#39;</span><span class="p">,</span> <span class="mi">10</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_pub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_publisher</span><span class="p">(</span>
+            <span class="n">Image</span><span class="p">,</span> <span class="s1">&#39;/camera/image_raw&#39;</span><span class="p">,</span> <span class="mi">10</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bridge</span> <span class="o">=</span> <span class="n">CvBridge</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_timer</span><span class="p">(</span><span class="mf">0.03</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">publish_all</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shm_image</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_targets</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CameraPublisher ready&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CameraPublisher.connect_shm_persons">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.connect_shm_persons">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect_shm_persons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Connect to the shared memory segment containing person predictions.</span>
+
+<span class="sd">        If the shared memory segment is not available yet, the connection attempt</span>
+<span class="sd">        fails silently and will be retried later.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="o">=</span> <span class="n">shared_memory</span><span class="o">.</span><span class="n">SharedMemory</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;predictions_shm&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Connected to predictions_shm&quot;</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CameraPublisher.connect_shm_image">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.connect_shm_image">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect_shm_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Connect to the shared memory segment containing the camera image.</span>
+
+<span class="sd">        The shared memory buffer is interpreted as a NumPy array with a fixed</span>
+<span class="sd">        shape and data type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shm_image</span> <span class="o">=</span> <span class="n">shared_memory</span><span class="o">.</span><span class="n">SharedMemory</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;image_shm&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span>
+                    <span class="n">SHAPE</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">DTYPE</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shm_image</span><span class="o">.</span><span class="n">buf</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Connected to image_shm&quot;</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CameraPublisher.read_predictions">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.read_predictions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read person predictions from shared memory.</span>
+
+<span class="sd">        The method parses the shared memory buffer according to the predefined</span>
+<span class="sd">        binary layout and extracts the timestamp, person IDs, and associated</span>
+<span class="sd">        3D points.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple:</span>
+<span class="sd">                - int | None: Timestamp in nanoseconds, or None if no data</span>
+<span class="sd">                  is available</span>
+<span class="sd">                - list: List of tuples (person_id, list of (x, y, z) points)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect_shm_persons</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+
+        <span class="n">buf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span><span class="o">.</span><span class="n">buf</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="p">(</span><span class="n">num_targets</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_targets</span> <span class="o">=</span> <span class="n">num_targets</span>
+
+        <span class="p">(</span><span class="n">timestamp_ns</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;Q&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_targets</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">person_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span>
+
+            <span class="p">(</span><span class="n">num_points</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span>
+
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_points</span><span class="p">):</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;fff&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="mi">12</span>
+                <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">person_id</span><span class="p">,</span> <span class="n">points</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">timestamp_ns</span><span class="p">,</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="CameraPublisher.publish_persons">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.publish_persons">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_persons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Publish detected persons as a `robot_msgs/Persons` message.</span>
+
+<span class="sd">        The ROS message timestamp is derived from the shared memory timestamp</span>
+<span class="sd">        to preserve temporal consistency with the source data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timestamp_ns</span><span class="p">,</span> <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_predictions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">timestamp_ns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_targets</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">Persons</span><span class="p">()</span>
+
+        <span class="n">msg</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span><span class="o">.</span><span class="n">sec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">timestamp_ns</span> <span class="o">//</span> <span class="mi">1_000_000_000</span>
+        <span class="p">)</span>
+        <span class="n">msg</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span><span class="o">.</span><span class="n">nanosec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">timestamp_ns</span> <span class="o">%</span> <span class="mi">1_000_000_000</span>
+        <span class="p">)</span>
+        <span class="n">msg</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="s2">&quot;camera_link&quot;</span>
+
+        <span class="k">for</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">points</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">:</span>
+            <span class="n">marker</span> <span class="o">=</span> <span class="n">PersonMarker</span><span class="p">()</span>
+            <span class="n">marker</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">person_id</span>
+
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">[:</span><span class="mi">12</span><span class="p">]:</span>
+                <span class="n">point_msg</span> <span class="o">=</span> <span class="n">Point</span><span class="p">()</span>
+                <span class="n">point_msg</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">point_msg</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">point_msg</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">p</span>
+                <span class="n">marker</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point_msg</span><span class="p">)</span>
+
+            <span class="n">msg</span><span class="o">.</span><span class="n">people</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">person_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Published </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">people</span><span class="p">)</span><span class="si">}</span><span class="s2"> people&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CameraPublisher.publish_image">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.publish_image">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Publish the camera image from shared memory as a ROS image message.</span>
+
+<span class="sd">        The image is copied from shared memory, converted to a ROS-compatible</span>
+<span class="sd">        format, and published with the current ROS time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect_shm_image</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span>
+
+        <span class="n">img_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">ros_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bridge</span><span class="o">.</span><span class="n">cv2_to_imgmsg</span><span class="p">(</span>
+            <span class="n">img_copy</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;rgb8&#39;</span>
+        <span class="p">)</span>
+
+        <span class="n">ros_img</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">stamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_clock</span><span class="p">()</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">to_msg</span><span class="p">()</span>
+        <span class="n">ros_img</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">frame_id</span> <span class="o">=</span> <span class="s2">&quot;camera_link&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">ros_img</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CameraPublisher.publish_all">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.publish_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Periodic timer callback.</span>
+
+<span class="sd">        Publishes person detections and, optionally, the camera image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_persons</span><span class="p">()</span></div>
+</div>
+
+        <span class="c1"># self.publish_image()  # optional</span>
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Entry point for the CameraPublisher node.</span>
+
+<span class="sd">    Initializes rclpy, spins the node, and ensures a clean shutdown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">CameraPublisher</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rclpy</span><span class="o">.</span><span class="n">spin</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">destroy_node</span><span class="p">()</span>
+    <span class="n">rclpy</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mensabot_Admin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

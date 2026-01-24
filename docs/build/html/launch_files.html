@@ -1,0 +1,156 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launch Files &mdash; Mensabot 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Python Nodes" href="python_nodes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Mensabot
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Project Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python_nodes.html">Python Nodes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Launch Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mensabot-bringup">Mensabot Bringup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualization-in-rviz">Visualization in RVIZ</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Mensabot</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Launch Files</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/launch_files.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="launch-files">
+<h1>Launch Files<a class="headerlink" href="#launch-files" title="Link to this heading"></a></h1>
+<p>This section describes the ROS 2 launch files used to start and visualize the Mensabot system.
+Launch files serve as entry points for different operation modes and combine multiple ROS 2 nodes into a coherent runtime configuration.
+They are not part of the public Python API and are therefore documented conceptually rather than via automatic code extraction.</p>
+<section id="mensabot-bringup">
+<h2>Mensabot Bringup<a class="headerlink" href="#mensabot-bringup" title="Link to this heading"></a></h2>
+<p>The Mensabot bringup launch file starts the core runtime components required to operate the robot.
+It is intended to be used when bringing up the robot on real hardware or in a fully integrated system setup.</p>
+<p>The main purpose of this launch file is to initialize the complete robot software stack, including control, state publishing, and controller management.
+It starts ROS 2 Control for hardware abstraction and controller handling, the robot state publisher to broadcast the TF tree derived from the URDF model, and the required controller spawners such as the joint state broadcaster and the base controller.</p>
+<p>The robot model is generated at launch time by processing a Xacro file into a URDF.
+The resulting robot description is passed to both the ROS 2 Control node and the robot state publisher to ensure a consistent robot model across the system.</p>
+<p>Controller parameters are loaded from YAML configuration files located in the directory
+<code class="docutils literal notranslate"><span class="pre">mensabot_bringup/config/</span></code>.
+These configuration files define controller types, interfaces, and tuning parameters.</p>
+<p>The launch file is located at
+<code class="docutils literal notranslate"><span class="pre">mensabot_bringup/launch/mensabot.launch.py</span></code>.</p>
+<p>The full robot bringup can be started with the following command:</p>
+<p>ros2 launch mensabot_bringup mensabot.launch.py</p>
+<p>Before launching, ensure that the correct ROS 2 workspace is sourced and that all required controllers are properly defined.
+TF frames such as <code class="docutils literal notranslate"><span class="pre">odom</span></code> must be available for correct operation.</p>
+</section>
+<section id="visualization-in-rviz">
+<h2>Visualization in RVIZ<a class="headerlink" href="#visualization-in-rviz" title="Link to this heading"></a></h2>
+<p>The visualization launch file starts RViz with predefined configuration files to visualize the robot model and runtime data.
+It is mainly intended for development, debugging, and demonstration purposes.</p>
+<p>This launch file provides different visualization modes, ranging from a simple model preview to a full visualization including live robot data.
+Two modes are supported: a standalone model visualization that displays only the robot model generated from the description package, and a full robot visualization that displays the robot together with live data such as TF frames, markers, and paths.</p>
+<p>The active visualization mode is selected using a launch argument called <code class="docutils literal notranslate"><span class="pre">standalone</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">standalone</span></code> is set to true, RViz is started in model-only mode.
+If set to false, RViz is started with the full robot visualization setup.</p>
+<p>RViz configuration files are loaded from the directory
+<code class="docutils literal notranslate"><span class="pre">mensabot_description/rviz/</span></code>.
+Different configuration files are used depending on the selected visualization mode.</p>
+<p>In addition to RViz, the visualization launch file also starts helper nodes used for visualization and analysis.
+These include an odometry logger node that publishes the robot trajectory as a <code class="docutils literal notranslate"><span class="pre">nav_msgs/Path</span></code> and a marker visualization node that displays markers such as points and arrows for debugging and analysis.</p>
+<p>The launch file is located at
+<code class="docutils literal notranslate"><span class="pre">mensabot_description/launch/visualization.launch.py</span></code>.</p>
+<p>RViz can be started in standalone mode with:</p>
+<p>ros2 launch mensabot_description visualization.launch.py standalone:=true</p>
+<p>To start RViz with full robot visualization, use:</p>
+<p>ros2 launch mensabot_description visualization.launch.py standalone:=false</p>
+<p>If the robot model does not appear in RViz, verify that the description package is built and sourced correctly and that TF data is available before starting the visualization.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="python_nodes.html" class="btn btn-neutral float-left" title="Python Nodes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mensabot_Admin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
