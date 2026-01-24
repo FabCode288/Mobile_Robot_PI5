@@ -252,27 +252,22 @@ a clean shutdown when the node stops.</p>
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">camera_publisher.camera_pub.</span></span><span class="sig-name descname"><span class="pre">CameraPublisher</span></span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher" title="Link to this definition"></a></dt>
 <dd><p>ROS 2 node for publishing camera-based person detections from shared memory.</p>
-<p>This node reads prediction data written by an external process into shared
-memory and publishes it as ROS messages. Each detected person is represented
-by a unique ID and a sequence of 3D points.</p>
-<p>Additionally, the node can publish RGB images from shared memory as
-<cite>sensor_msgs/Image</cite> messages.</p>
+<p>This node reads prediction results written by an external process into
+shared memory and publishes them as ROS messages of type
+<code class="xref py py-class docutils literal notranslate"><span class="pre">robot_msgs.msg.Persons</span></code>.</p>
+<p>Each detected person is identified by a unique ID and represented by a
+sequence of 3D points in the camera coordinate frame.</p>
+<p>Optionally, the node can also publish RGB camera images from shared memory
+as <code class="xref py py-class docutils literal notranslate"><span class="pre">sensor_msgs.msg.Image</span></code>.</p>
 <p>Shared memory layout for person predictions:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>int32  num_targets</p></li>
-<li><p>uint64 timestamp_ns</p></li>
-<li><dl class="simple">
-<dt>for each target:</dt><dd><ul>
-<li><p>int32  person_id</p></li>
-<li><p>int32  num_points</p></li>
-<li><p>float32 x, y, z (per point)</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">int32</span>   <span class="n">num_targets</span>
+<span class="n">uint64</span>  <span class="n">timestamp_ns</span>
+<span class="k">for</span> <span class="n">each</span> <span class="n">target</span><span class="p">:</span>
+    <span class="n">int32</span>   <span class="n">person_id</span>
+    <span class="n">int32</span>   <span class="n">num_points</span>
+    <span class="n">float32</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>  <span class="p">(</span><span class="n">per</span> <span class="n">point</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.connect_shm_image">
 <span class="sig-name descname"><span class="pre">connect_shm_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.connect_shm_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_image" title="Link to this definition"></a></dt>
@@ -285,8 +280,8 @@ shape and data type.</p>
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.connect_shm_persons">
 <span class="sig-name descname"><span class="pre">connect_shm_persons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.connect_shm_persons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.connect_shm_persons" title="Link to this definition"></a></dt>
 <dd><p>Connect to the shared memory segment containing person predictions.</p>
-<p>If the shared memory segment is not available yet, the connection attempt
-fails silently and will be retried later.</p>
+<p>If the shared memory segment does not exist yet, the connection attempt
+fails silently and will be retried during the next publish cycle.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -300,31 +295,32 @@ fails silently and will be retried later.</p>
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.publish_image">
 <span class="sig-name descname"><span class="pre">publish_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.publish_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.publish_image" title="Link to this definition"></a></dt>
 <dd><p>Publish the camera image from shared memory as a ROS image message.</p>
-<p>The image is copied from shared memory, converted to a ROS-compatible
-format, and published with the current ROS time.</p>
+<p>The image is copied from shared memory, converted using <code class="docutils literal notranslate"><span class="pre">cv_bridge</span></code>,
+and published with the current ROS time.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.publish_persons">
 <span class="sig-name descname"><span class="pre">publish_persons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.publish_persons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.publish_persons" title="Link to this definition"></a></dt>
-<dd><p>Publish detected persons as a <cite>robot_msgs/Persons</cite> message.</p>
-<p>The ROS message timestamp is derived from the shared memory timestamp
-to preserve temporal consistency with the source data.</p>
+<dd><p>Publish detected persons as a <code class="xref py py-class docutils literal notranslate"><span class="pre">robot_msgs.msg.Persons</span></code> message.</p>
+<p>The message timestamp is derived from the shared memory timestamp to
+preserve temporal consistency with the source data.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.CameraPublisher.read_predictions">
 <span class="sig-name descname"><span class="pre">read_predictions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#CameraPublisher.read_predictions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.CameraPublisher.read_predictions" title="Link to this definition"></a></dt>
-<dd><p>Read person predictions from shared memory.</p>
-<p>The method parses the shared memory buffer according to the predefined
-binary layout and extracts the timestamp, person IDs, and associated
-3D points.</p>
+<dd><p>Read person prediction data from shared memory.</p>
+<p>The shared memory buffer is parsed according to the predefined binary
+layout. The method extracts the timestamp, person IDs, and associated
+3D point sequences.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p>int | None: Timestamp in nanoseconds, or None if no data
-is available</p></li>
-<li><p>list: List of tuples (person_id, list of (x, y, z) points)</p></li>
+<li><p>int or None: Timestamp in nanoseconds, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no
+shared memory data is available.</p></li>
+<li><p>list: A list of tuples <code class="docutils literal notranslate"><span class="pre">(person_id,</span> <span class="pre">points)</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">points</span></code> is a list of <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> tuples.</p></li>
 </ul>
 </p>
 </dd>
@@ -340,7 +336,7 @@ is available</p></li>
 <dt class="sig sig-object py" id="camera_publisher.camera_pub.main">
 <span class="sig-prename descclassname"><span class="pre">camera_publisher.camera_pub.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_publisher/camera_pub.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camera_publisher.camera_pub.main" title="Link to this definition"></a></dt>
 <dd><p>Entry point for the CameraPublisher node.</p>
-<p>Initializes rclpy, spins the node, and ensures a clean shutdown.</p>
+<p>Initializes rclpy, spins the node, and ensures a clean shutdown on exit.</p>
 </dd></dl>
 
 </section>

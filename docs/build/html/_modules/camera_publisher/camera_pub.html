@@ -115,21 +115,24 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    ROS 2 node for publishing camera-based person detections from shared memory.</span>
 
-<span class="sd">    This node reads prediction data written by an external process into shared</span>
-<span class="sd">    memory and publishes it as ROS messages. Each detected person is represented</span>
-<span class="sd">    by a unique ID and a sequence of 3D points.</span>
+<span class="sd">    This node reads prediction results written by an external process into</span>
+<span class="sd">    shared memory and publishes them as ROS messages of type</span>
+<span class="sd">    :class:`robot_msgs.msg.Persons`.</span>
 
-<span class="sd">    Additionally, the node can publish RGB images from shared memory as</span>
-<span class="sd">    `sensor_msgs/Image` messages.</span>
+<span class="sd">    Each detected person is identified by a unique ID and represented by a</span>
+<span class="sd">    sequence of 3D points in the camera coordinate frame.</span>
 
-<span class="sd">    Shared memory layout for person predictions:</span>
+<span class="sd">    Optionally, the node can also publish RGB camera images from shared memory</span>
+<span class="sd">    as :class:`sensor_msgs.msg.Image`.</span>
 
-<span class="sd">        - int32  num_targets</span>
-<span class="sd">        - uint64 timestamp_ns</span>
-<span class="sd">        - for each target:</span>
-<span class="sd">            - int32  person_id</span>
-<span class="sd">            - int32  num_points</span>
-<span class="sd">            - float32 x, y, z (per point)</span>
+<span class="sd">    Shared memory layout for person predictions::</span>
+
+<span class="sd">        int32   num_targets</span>
+<span class="sd">        uint64  timestamp_ns</span>
+<span class="sd">        for each target:</span>
+<span class="sd">            int32   person_id</span>
+<span class="sd">            int32   num_points</span>
+<span class="sd">            float32 x, y, z  (per point)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -165,8 +168,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Connect to the shared memory segment containing person predictions.</span>
 
-<span class="sd">        If the shared memory segment is not available yet, the connection attempt</span>
-<span class="sd">        fails silently and will be retried later.</span>
+<span class="sd">        If the shared memory segment does not exist yet, the connection attempt</span>
+<span class="sd">        fails silently and will be retried during the next publish cycle.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -208,17 +211,18 @@
 <a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.read_predictions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">read_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read person predictions from shared memory.</span>
+<span class="sd">        Read person prediction data from shared memory.</span>
 
-<span class="sd">        The method parses the shared memory buffer according to the predefined</span>
-<span class="sd">        binary layout and extracts the timestamp, person IDs, and associated</span>
-<span class="sd">        3D points.</span>
+<span class="sd">        The shared memory buffer is parsed according to the predefined binary</span>
+<span class="sd">        layout. The method extracts the timestamp, person IDs, and associated</span>
+<span class="sd">        3D point sequences.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple:</span>
-<span class="sd">                - int | None: Timestamp in nanoseconds, or None if no data</span>
-<span class="sd">                  is available</span>
-<span class="sd">                - list: List of tuples (person_id, list of (x, y, z) points)</span>
+<span class="sd">                - int or None: Timestamp in nanoseconds, or ``None`` if no</span>
+<span class="sd">                  shared memory data is available.</span>
+<span class="sd">                - list: A list of tuples ``(person_id, points)``, where</span>
+<span class="sd">                  ``points`` is a list of ``(x, y, z)`` tuples.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shm_persons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect_shm_persons</span><span class="p">()</span>
@@ -260,10 +264,10 @@
 <a class="viewcode-back" href="../../python_nodes.html#camera_publisher.camera_pub.CameraPublisher.publish_persons">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">publish_persons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Publish detected persons as a `robot_msgs/Persons` message.</span>
+<span class="sd">        Publish detected persons as a :class:`robot_msgs.msg.Persons` message.</span>
 
-<span class="sd">        The ROS message timestamp is derived from the shared memory timestamp</span>
-<span class="sd">        to preserve temporal consistency with the source data.</span>
+<span class="sd">        The message timestamp is derived from the shared memory timestamp to</span>
+<span class="sd">        preserve temporal consistency with the source data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">timestamp_ns</span><span class="p">,</span> <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_predictions</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">timestamp_ns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_targets</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -302,8 +306,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Publish the camera image from shared memory as a ROS image message.</span>
 
-<span class="sd">        The image is copied from shared memory, converted to a ROS-compatible</span>
-<span class="sd">        format, and published with the current ROS time.</span>
+<span class="sd">        The image is copied from shared memory, converted using ``cv_bridge``,</span>
+<span class="sd">        and published with the current ROS time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect_shm_image</span><span class="p">()</span>
@@ -341,7 +345,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Entry point for the CameraPublisher node.</span>
 
-<span class="sd">    Initializes rclpy, spins the node, and ensures a clean shutdown.</span>
+<span class="sd">    Initializes rclpy, spins the node, and ensures a clean shutdown on exit.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">rclpy</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
     <span class="n">node</span> <span class="o">=</span> <span class="n">CameraPublisher</span><span class="p">()</span>
