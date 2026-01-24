@@ -40,21 +40,24 @@ class CameraPublisher(Node):
     """
     ROS 2 node for publishing camera-based person detections from shared memory.
 
-    This node reads prediction data written by an external process into shared
-    memory and publishes it as ROS messages. Each detected person is represented
-    by a unique ID and a sequence of 3D points.
+    This node reads prediction results written by an external process into
+    shared memory and publishes them as ROS messages of type
+    :class:`robot_msgs.msg.Persons`.
 
-    Additionally, the node can publish RGB images from shared memory as
-    `sensor_msgs/Image` messages.
+    Each detected person is identified by a unique ID and represented by a
+    sequence of 3D points in the camera coordinate frame.
 
-    Shared memory layout for person predictions:
+    Optionally, the node can also publish RGB camera images from shared memory
+    as :class:`sensor_msgs.msg.Image`.
 
-        - int32  num_targets
-        - uint64 timestamp_ns
-        - for each target:
-            - int32  person_id
-            - int32  num_points
-            - float32 x, y, z (per point)
+    Shared memory layout for person predictions::
+
+        int32   num_targets
+        uint64  timestamp_ns
+        for each target:
+            int32   person_id
+            int32   num_points
+            float32 x, y, z  (per point)
     """
 
     def __init__(self):
@@ -88,8 +91,8 @@ class CameraPublisher(Node):
         """
         Connect to the shared memory segment containing person predictions.
 
-        If the shared memory segment is not available yet, the connection attempt
-        fails silently and will be retried later.
+        If the shared memory segment does not exist yet, the connection attempt
+        fails silently and will be retried during the next publish cycle.
         """
         if self.shm_persons is None:
             try:
@@ -125,17 +128,18 @@ class CameraPublisher(Node):
 
     def read_predictions(self):
         """
-        Read person predictions from shared memory.
+        Read person prediction data from shared memory.
 
-        The method parses the shared memory buffer according to the predefined
-        binary layout and extracts the timestamp, person IDs, and associated
-        3D points.
+        The shared memory buffer is parsed according to the predefined binary
+        layout. The method extracts the timestamp, person IDs, and associated
+        3D point sequences.
 
         Returns:
             tuple:
-                - int | None: Timestamp in nanoseconds, or None if no data
-                  is available
-                - list: List of tuples (person_id, list of (x, y, z) points)
+                - int or None: Timestamp in nanoseconds, or ``None`` if no
+                  shared memory data is available.
+                - list: A list of tuples ``(person_id, points)``, where
+                  ``points`` is a list of ``(x, y, z)`` tuples.
         """
         if self.shm_persons is None:
             self.connect_shm_persons()
@@ -174,10 +178,10 @@ class CameraPublisher(Node):
 
     def publish_persons(self):
         """
-        Publish detected persons as a `robot_msgs/Persons` message.
+        Publish detected persons as a :class:`robot_msgs.msg.Persons` message.
 
-        The ROS message timestamp is derived from the shared memory timestamp
-        to preserve temporal consistency with the source data.
+        The message timestamp is derived from the shared memory timestamp to
+        preserve temporal consistency with the source data.
         """
         timestamp_ns, preds = self.read_predictions()
         if timestamp_ns is None or self.num_targets == 0:
@@ -213,8 +217,8 @@ class CameraPublisher(Node):
         """
         Publish the camera image from shared memory as a ROS image message.
 
-        The image is copied from shared memory, converted to a ROS-compatible
-        format, and published with the current ROS time.
+        The image is copied from shared memory, converted using ``cv_bridge``,
+        and published with the current ROS time.
         """
         if self.shared_image is None:
             self.connect_shm_image()
@@ -245,7 +249,7 @@ def main(args=None):
     """
     Entry point for the CameraPublisher node.
 
-    Initializes rclpy, spins the node, and ensures a clean shutdown.
+    Initializes rclpy, spins the node, and ensures a clean shutdown on exit.
     """
     rclpy.init(args=args)
     node = CameraPublisher()
