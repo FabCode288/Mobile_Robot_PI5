@@ -75,13 +75,17 @@ source install/setup.bash
 ros2 launch mensabot_bringup mensabot_launch
 ````
 
-RViz Visualization (External System)
+### RViz Visualization (External System)
 
-A separate launch file is provided for visualization using RViz.
-It can be executed on any system within the same ROS2 network.
+A separate launch file is provided for RViz-based visualization.
+It can be executed on any system that has the same ROS2 workspace available
+and is connected to the same ROS2 network as the Raspberry Pi.
+
+Start command:
 
 ```bash
 cd ros2_ws
 source install/setup.bash
 ros2 launch mensabot_description view_mensabot_launch
-````
+
+
