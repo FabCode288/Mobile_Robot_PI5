@@ -73,3 +73,15 @@ Start command:
 cd ros2_ws
 source install/setup.bash
 ros2 launch mensabot_bringup mensabot_launch
+````
+
+RViz Visualization (External System)
+
+A separate launch file is provided for visualization using RViz.
+It can be executed on any system within the same ROS2 network.
+
+```bash
+cd ros2_ws
+source install/setup.bash
+ros2 launch mensabot_description view_mensabot_launch
+````
