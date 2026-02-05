@@ -68,9 +68,8 @@ These features are not part of the current implementation.
 
 ## Software Requirements
 
-- Raspberry Pi OS (64-bit recommended)
+- Raspberry Pi 5
 - ROS2
-- Python 3
 
 ---
 
@@ -81,3 +80,4 @@ Clone the repository on the Raspberry Pi:
 ```bash
 git clone https://github.com/FabCode288/Mobile_Robot_PI5.git
 cd Mobile_Robot_PI5
+
