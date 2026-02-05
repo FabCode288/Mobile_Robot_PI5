@@ -80,4 +80,6 @@ Clone the repository on the Raspberry Pi:
 ```bash
 git clone https://github.com/FabCode288/Mobile_Robot_PI5.git
 cd Mobile_Robot_PI5
+source /opt/ros/<ros_distro>/setup.bash
+
 
